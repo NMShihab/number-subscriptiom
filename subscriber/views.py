@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from django.contrib.auth.hashers import make_password
 from rest_framework.response import Response
 from django.contrib.auth.models import User
+from .tasks import showName,updateSubscription
 from rest_framework import status
 import json
 import re
@@ -26,7 +27,8 @@ def isValidNumber(num):
 @api_view(['POST'])
 def customerRegistration(request):
     data = request.data
-
+    
+    
 
     print(data)
 
@@ -44,6 +46,8 @@ def customerRegistration(request):
                     phnNumber = data['phnNumber'],
 
                 )
+
+                
                 
                 serializer= CustomerSerializer(customerData,many=False)
                 return Response(serializer.data)

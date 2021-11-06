@@ -7,7 +7,7 @@ from celery.schedules import crontab
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'numberSubscription.settings')
 
-app = Celery('proj')
+app = Celery('numberSubscription')
 
 # Using a string here means the worker don't have to serialize
 # the configuration object to child processes.
@@ -15,27 +15,22 @@ app = Celery('proj')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
+
+app.conf.beat_schedule = {
+    "every-7-seconds":{
+        "task": "subscriber.tasks.updateSubscription",
+        "schedule":crontab(hour=21, minute=37),
+        
+
+    }
+    
+}
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
 
-app.conf.beat_schedule = {
-    'add-every-minute-contrab': {
-        'task': 'multiply_two_numbers',
-        'schedule': crontab(),
-        'args': (16, 16),
-    },
-    'add-every-5-seconds': {
-        'task': 'multiply_two_numbers',
-        'schedule': 5.0,
-        'args': (16, 16)
-    },
-    'add-every-30-seconds': {
-        'task': 'tasks.add',
-        'schedule': 30.0,
-        'args': (16, 16)
-    },
-}
+
 
 @app.task(bind=True)
 def debug_task(self):

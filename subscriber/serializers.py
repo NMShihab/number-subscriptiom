@@ -6,7 +6,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Customer
-        fields =["user","email","phnNumber","stripe_id","planName","starDate","endDate","subscription_id","isSubscribe"]
+        fields =["user","email","phnNumber","stripe_id","planName","startDate","endDate","subscription_id","isSubscribe"]
     
     def get_email(self,obj):
         email = str(obj.user)

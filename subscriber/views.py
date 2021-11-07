@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from rest_framework import serializers
 from rest_framework.decorators import api_view
 from django.contrib.auth.hashers import make_password, check_password 
 from rest_framework.response import Response
@@ -87,15 +86,14 @@ def customerRegistration(request):
                 start_date = datetime.datetime.now().strftime("%c")
                 end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
 
-                # if(data["planName"] == "Globalnet Gold"):
-                #     end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
+               
 
                 customerData = Customer.objects.create(
                     user = user,
                     phnNumber = data['phnNumber'],
                     planName = data['planName'],
                     stripe_id = stripe_customer.id,
-                    starDate = start_date,
+                    startDate = start_date,
                     endDate = end_date,
                     subscription_id = subscription.id
     
@@ -170,8 +168,9 @@ def changePlan(request):
     data = request.data
     if IsAuthenticated(data) == False :
         return Response({"message":"Please give us right email and password"})
-    # if IsActive(data) == False :
-    #     return Response({"message":"Your phone number is deactivated."})
+
+    if IsActive(data) == False :
+        return Response({"message":"Your phone number is deactivated."})
 
     start_date = datetime.datetime.now().strftime("%c")
     end_date = end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
@@ -212,7 +211,7 @@ def changePlan(request):
 
 
         customer.planName = data["planName"]
-        customer.starDate = start_date
+        customer.startDate = start_date
         customer.endDate = end_date
         customer.subscription_id = subscription.id
         customer.isSubscribe = True

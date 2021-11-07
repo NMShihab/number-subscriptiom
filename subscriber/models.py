@@ -8,7 +8,7 @@ class Customer(models.Model):
     phnNumber = models.CharField(max_length=14,unique=True,blank=False,null=False)
     planName = models.CharField(max_length=100)
     stripe_id = models.CharField(max_length=256)
-    starDate = models.CharField(max_length =256)
+    startDate = models.CharField(max_length =256)
     endDate = models.CharField(max_length=256)
     subscription_id = models.CharField(max_length=256,blank=True,null=True)
     isSubscribe = models.BooleanField(default=True)

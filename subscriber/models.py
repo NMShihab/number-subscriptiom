@@ -10,6 +10,7 @@ class Customer(models.Model):
     stripe_id = models.CharField(max_length=256)
     starDate = models.CharField(max_length =256)
     endDate = models.CharField(max_length=256)
+    subscription_id = models.CharField(max_length=256,blank=True,null=True)
     isSubscribe = models.BooleanField(default=True)
 
     def __str__(self):

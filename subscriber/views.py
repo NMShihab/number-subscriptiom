@@ -49,10 +49,34 @@ def customerRegistration(request):
     """ This view will Register user and subscribe fo a plan"""
 
     data = request.data
+
+
     
     try:
         if isValidNumber(data['phnNumber']):
             try:
+
+                stripe_customer = stripe.Customer.create(
+                    email = data['email']
+                )
+
+                s_card = stripe.Customer.create_source(
+                    stripe_customer.id,
+                    source="tok_amex",
+                )
+
+                planid = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
+
+                if data["planName"]== "Globalnet Silver":
+                    planid = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
+                
+                if data["planName"]== "Globalnet Gold":
+                    planid = "price_1JsHPFSDkRo5FXlk9VSl41rV"
+
+                subscription = stripe.Subscription.create(
+                    customer = stripe_customer.id,
+                    items = [{'plan':planid}]
+                )
             
                 user = User.objects.create(
                     email = data['email'],
@@ -63,16 +87,17 @@ def customerRegistration(request):
                 start_date = datetime.datetime.now().strftime("%c")
                 end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
 
-                if(data["planName"] == "Globalnet Gold"):
-                    end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
+                # if(data["planName"] == "Globalnet Gold"):
+                #     end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
 
                 customerData = Customer.objects.create(
                     user = user,
                     phnNumber = data['phnNumber'],
                     planName = data['planName'],
-                    stripe_id = user.id,
+                    stripe_id = stripe_customer.id,
                     starDate = start_date,
-                    endDate = end_date
+                    endDate = end_date,
+                    subscription_id = subscription.id
     
                 )
                
@@ -116,9 +141,13 @@ def cancelCustomerSubscription(request):
 
         customer = Customer.objects.get(user=user.id)
 
+        print(customer)
+
         if(customer.planName == "Globalnet Bronze" or customer.planName == "Globalnet Silver"):
             return Response({"message":"You Can not Cancel your plan"})
-
+        stripe.Subscription.delete(
+            customer.subscription_id,
+        )
         customer.isSubscribe = False
         customer.save()
 
@@ -160,11 +189,32 @@ def changePlan(request):
 
         customer = Customer.objects.get(user=user.id)
 
+        if customer.isSubscribe:
+            stripe.Subscription.delete(
+            customer.subscription_id,
+        )
+
+
         
+
+        planid = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
+
+        if data["planName"]== "Globalnet Silver":
+            planid = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
+                
+        if data["planName"]== "Globalnet Gold":
+            planid = "price_1JsHPFSDkRo5FXlk9VSl41rV"
+
+        subscription = stripe.Subscription.create(
+            customer = customer.stripe_id,
+            items = [{'plan':planid}]
+        )       
+
 
         customer.planName = data["planName"]
         customer.starDate = start_date
         customer.endDate = end_date
+        customer.subscription_id = subscription.id
         customer.isSubscribe = True
         customer.save()
 

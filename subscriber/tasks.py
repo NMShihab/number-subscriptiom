@@ -8,6 +8,7 @@ import datetime
 
 @shared_task
 def updateSubscription():
+    """ This task will unsubsscribe after the subscription period end"""
     today_date = datetime.datetime.now().strftime("%x")
     customers = Customer.objects.filter(planName=today_date)
     for customer in customers:

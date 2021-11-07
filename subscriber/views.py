@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import serializers
 from rest_framework.decorators import api_view
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password 
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from .tasks import updateSubscription
@@ -25,14 +25,24 @@ def isValidNumber(num):
         return False
     pattern = re.compile('(0|880)?[-\s]?[1]\d{9}')
     return pattern.match(num) 
+
+
+def IsAuthenticated(data):
+    user_ =  User.objects.get(email=data["username"])
+    return check_password(data["password"],user_.password)
+   
     
+def IsActive(data):
+    user_ =  User.objects.get(email=data["username"])
+    return user_.is_active
+
+
+
+
 
 @api_view(['POST'])
 def customerRegistration(request):
     data = request.data
-    
-    
-
     print(data)
 
     try:
@@ -47,6 +57,9 @@ def customerRegistration(request):
 
                 start_date = datetime.datetime.now().strftime("%c")
                 end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%c")
+
+                if(data["planName"] == "Globalnet Gold"):
+                    end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%c")
 
                 customerData = Customer.objects.create(
                     user = user,
@@ -77,5 +90,91 @@ def customerRegistration(request):
         return Response(message)
 
 
+
+
+@api_view(['PUT'])
 def cancelCustomerSubscription(request):
-    pass 
+    
+    data = request.data
+    
+
+
+    if IsAuthenticated(data) == False :
+        return Response({"message":"Please give us right email and password"})
+    if IsActive(data) == False :
+        return Response({"message":"Your phone number is deactivated"})
+
+    
+    
+    try: 
+        user =  User.objects.get(email=data["username"])  
+
+        customer = Customer.objects.get(user=user.id)
+
+        if(customer.planName == "Globalnet Bronze" or customer.planName == "Globalnet Silver"):
+            return Response({"message":"You Can not Cancel your plan"})
+
+        customer.isSubscribe = False
+        customer.save()
+
+        user.is_active = False
+        user.save()
+        serializer= CustomerSerializer(customer,many=False)
+        return Response(serializer.data)
+    except  Exception as e:
+        message = {"detail":str(e)}
+        print(e)
+        return Response(message)
+    
+   
+    
+
+@api_view(['PUT'])
+
+def changePlan(request):
+
+    data = request.data
+    if IsAuthenticated(data) == False :
+        return Response({"message":"Please give us right email and password"})
+    # if IsActive(data) == False :
+    #     return Response({"message":"Your phone number is deactivated."})
+
+    start_date = datetime.datetime.now().strftime("%c")
+    end_date = end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%c")
+    
+
+    if data["planName"] == "Globalnet Gold":
+        end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%c")
+    
+        
+    print(data["planName"])
+    
+    try: 
+        user =  User.objects.get(email=data["username"])  
+        
+
+        customer = Customer.objects.get(user=user.id)
+
+        
+
+        customer.planName = data["planName"]
+        customer.starDate = start_date
+        customer.endDate = end_date
+        customer.isSubscribe = True
+        customer.save()
+
+        user.is_active = True
+        user.save()
+        serializer= CustomerSerializer(customer,many=False)
+        return Response(serializer.data)
+    except  Exception as e:
+        message = {"detail":str(e)}
+        print(e)
+        return Response(message)
+
+    
+
+
+
+    
+ 

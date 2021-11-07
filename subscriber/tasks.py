@@ -16,6 +16,7 @@ def updateSubscription():
         user.save()
         print("user is deactivated")
 
+
     
     
     

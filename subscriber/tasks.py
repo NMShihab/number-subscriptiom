@@ -4,10 +4,12 @@ import random
 from celery import shared_task
 from subscriber.models import Customer
 from django.contrib.auth.models import User
+import datetime
 
 @shared_task
 def updateSubscription():
-    customers = Customer.objects.filter(planName="Globalnet Silver")
+    today_date = datetime.datetime.now().strftime("%x")
+    customers = Customer.objects.filter(planName=today_date)
     for customer in customers:
         customer.isSubscribe = False
         customer.save() 

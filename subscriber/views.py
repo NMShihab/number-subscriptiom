@@ -17,7 +17,9 @@ from .serializers import CustomerSerializer
 
 stripe.api_key = settings.STRIPE_API_KEY
 
+
 def isValidNumber(num):
+    """ This Function will validate phn number"""
     if(num[0] == "0" and len(num) >11):
         return False
     
@@ -28,11 +30,13 @@ def isValidNumber(num):
 
 
 def IsAuthenticated(data):
+    """This function will aythenticate user"""
     user_ =  User.objects.get(email=data["username"])
     return check_password(data["password"],user_.password)
    
     
 def IsActive(data):
+    """ This funtion for check active customer"""
     user_ =  User.objects.get(email=data["username"])
     return user_.is_active
 
@@ -42,9 +46,10 @@ def IsActive(data):
 
 @api_view(['POST'])
 def customerRegistration(request):
-    data = request.data
-    print(data)
+    """ This view will Register user and subscribe fo a plan"""
 
+    data = request.data
+    
     try:
         if isValidNumber(data['phnNumber']):
             try:
@@ -56,10 +61,10 @@ def customerRegistration(request):
                 )
 
                 start_date = datetime.datetime.now().strftime("%c")
-                end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%c")
+                end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
 
                 if(data["planName"] == "Globalnet Gold"):
-                    end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%c")
+                    end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
 
                 customerData = Customer.objects.create(
                     user = user,
@@ -68,14 +73,12 @@ def customerRegistration(request):
                     stripe_id = user.id,
                     starDate = start_date,
                     endDate = end_date
-                
-
+    
                 )
-
-                
-                
+               
                 serializer= CustomerSerializer(customerData,many=False)
                 return Response(serializer.data)
+
             except Exception as e:
                 u = User.objects.get(username = data['email'])
                 u.delete()
@@ -94,13 +97,15 @@ def customerRegistration(request):
 
 @api_view(['PUT'])
 def cancelCustomerSubscription(request):
+
+    """This view will cancle subscription plan"""
     
     data = request.data
-    
 
 
     if IsAuthenticated(data) == False :
         return Response({"message":"Please give us right email and password"})
+
     if IsActive(data) == False :
         return Response({"message":"Your phone number is deactivated"})
 
@@ -130,8 +135,8 @@ def cancelCustomerSubscription(request):
     
 
 @api_view(['PUT'])
-
 def changePlan(request):
+    """ This view will change plan for customer"""
 
     data = request.data
     if IsAuthenticated(data) == False :
@@ -140,11 +145,11 @@ def changePlan(request):
     #     return Response({"message":"Your phone number is deactivated."})
 
     start_date = datetime.datetime.now().strftime("%c")
-    end_date = end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%c")
+    end_date = end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
     
 
     if data["planName"] == "Globalnet Gold":
-        end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%c")
+        end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
     
         
     print(data["planName"])

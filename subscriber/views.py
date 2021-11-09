@@ -3,7 +3,6 @@ from rest_framework.decorators import api_view
 from django.contrib.auth.hashers import make_password, check_password 
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .tasks import updateSubscription
 from rest_framework import status
 from django.conf import settings
 import stripe
@@ -17,8 +16,9 @@ from .serializers import CustomerSerializer
 stripe.api_key = settings.STRIPE_API_KEY
 
 
-def isValidNumber(num):
+def is_valid_number(num):
     """ This Function will validate phn number"""
+    
     if(num[0] == "0" and len(num) >11):
         return False
     
@@ -28,13 +28,13 @@ def isValidNumber(num):
     return pattern.match(num) 
 
 
-def IsAuthenticated(data):
+def is_authenticated(data):
     """This function will aythenticate user"""
     user_ =  User.objects.get(email=data["username"])
     return check_password(data["password"],user_.password)
    
     
-def IsActive(data):
+def is_active_user(data):
     """ This funtion for check active customer"""
     user_ =  User.objects.get(email=data["username"])
     return user_.is_active
@@ -44,7 +44,7 @@ def IsActive(data):
 
 
 @api_view(['POST'])
-def customerRegistration(request):
+def customer_registration(request):
     """ This view will Register user and subscribe fo a plan"""
 
     data = request.data
@@ -52,7 +52,7 @@ def customerRegistration(request):
 
     
     try:
-        if isValidNumber(data['phnNumber']):
+        if is_valid_number(data['primary_number']):
             try:
 
                 stripe_customer = stripe.Customer.create(
@@ -64,17 +64,17 @@ def customerRegistration(request):
                     source="tok_amex",
                 )
 
-                planid = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
+                plan_id = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
 
-                if data["planName"]== "Globalnet Silver":
-                    planid = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
+                if data["subscription_plan"]== "Globalnet Silver":
+                    plan_id = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
                 
-                if data["planName"]== "Globalnet Gold":
-                    planid = "price_1JsHPFSDkRo5FXlk9VSl41rV"
+                if data["subscription_plan"]== "Globalnet Gold":
+                    plan_id = "price_1JsHPFSDkRo5FXlk9VSl41rV"
 
                 subscription = stripe.Subscription.create(
                     customer = stripe_customer.id,
-                    items = [{'plan':planid}]
+                    items = [{'plan':plan_id}]
                 )
             
                 user = User.objects.create(
@@ -88,18 +88,18 @@ def customerRegistration(request):
 
                
 
-                customerData = Customer.objects.create(
+                customer_data = Customer.objects.create(
                     user = user,
-                    phnNumber = data['phnNumber'],
-                    planName = data['planName'],
+                    primary_number = data['primary_number'],
+                    subscription_plan = data['subscription_plan'],
                     stripe_id = stripe_customer.id,
-                    startDate = start_date,
-                    endDate = end_date,
+                    start_date = start_date,
+                    end_date = end_date,
                     subscription_id = subscription.id
     
                 )
                
-                serializer= CustomerSerializer(customerData,many=False)
+                serializer= CustomerSerializer(customer_data,many=False)
                 return Response(serializer.data)
 
             except Exception as e:
@@ -119,17 +119,17 @@ def customerRegistration(request):
 
 
 @api_view(['PUT'])
-def cancelCustomerSubscription(request):
+def cancel_customer_subscription(request):
 
     """This view will cancle subscription plan"""
     
     data = request.data
 
 
-    if IsAuthenticated(data) == False :
+    if is_authenticated(data) == False :
         return Response({"message":"Please give us right email and password"})
 
-    if IsActive(data) == False :
+    if is_active_user(data) == False :
         return Response({"message":"Your phone number is deactivated"})
 
     
@@ -141,12 +141,12 @@ def cancelCustomerSubscription(request):
 
         print(customer)
 
-        if(customer.planName == "Globalnet Bronze" or customer.planName == "Globalnet Silver"):
+        if(customer.subscription_plan == "Globalnet Bronze" or customer.subscription_plan == "Globalnet Silver"):
             return Response({"message":"You Can not Cancel your plan"})
         stripe.Subscription.delete(
             customer.subscription_id,
         )
-        customer.isSubscribe = False
+        customer.is_subscription = False
         customer.save()
 
         user.is_active = False
@@ -162,25 +162,25 @@ def cancelCustomerSubscription(request):
     
 
 @api_view(['PUT'])
-def changePlan(request):
+def change_plan(request):
     """ This view will change plan for customer"""
 
     data = request.data
-    if IsAuthenticated(data) == False :
+    if is_authenticated(data) == False :
         return Response({"message":"Please give us right email and password"})
 
-    if IsActive(data) == False :
+    if is_active_user(data) == False :
         return Response({"message":"Your phone number is deactivated."})
 
     start_date = datetime.datetime.now().strftime("%c")
     end_date = end_date = (datetime.datetime.now() + datetime.timedelta(30)).strftime("%x")
     
 
-    if data["planName"] == "Globalnet Gold":
+    if data["subscription_plan"] == "Globalnet Gold":
         end_date = (datetime.datetime.now() + datetime.timedelta(365)).strftime("%x")
     
         
-    print(data["planName"])
+    print(data["subscription_plan"])
     
     try: 
         user =  User.objects.get(email=data["username"])  
@@ -188,7 +188,7 @@ def changePlan(request):
 
         customer = Customer.objects.get(user=user.id)
 
-        if customer.isSubscribe:
+        if customer.is_subscribe:
             stripe.Subscription.delete(
             customer.subscription_id,
         )
@@ -196,32 +196,35 @@ def changePlan(request):
 
         
 
-        planid = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
+        plan_id = "price_1JsHMxSDkRo5FXlkOsq2QHSV"
 
-        if data["planName"]== "Globalnet Silver":
-            planid = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
+        if data["subscription_plan"]== "Globalnet Silver":
+            plan_id = "price_1JsHOJSDkRo5FXlkQmfEQzhN"
                 
-        if data["planName"]== "Globalnet Gold":
-            planid = "price_1JsHPFSDkRo5FXlk9VSl41rV"
+        if data["subscription_plan"]== "Globalnet Gold":
+            plan_id = "price_1JsHPFSDkRo5FXlk9VSl41rV"
 
         subscription = stripe.Subscription.create(
             customer = customer.stripe_id,
-            items = [{'plan':planid}]
+            items = [{'plan':plan_id}]
         )       
 
 
-        customer.planName = data["planName"]
-        customer.startDate = start_date
-        customer.endDate = end_date
+        customer.subscription_plan = data["subscription_plan"]
+        customer.start_date = start_date
+        customer.end_date = end_date
         customer.subscription_id = subscription.id
-        customer.isSubscribe = True
+        customer.is_subscribe = True
         customer.save()
 
         user.is_active = True
         user.save()
         serializer= CustomerSerializer(customer,many=False)
+        
         return Response(serializer.data)
+    
     except  Exception as e:
+        
         message = {"detail":str(e)}
         print(e)
         return Response(message)

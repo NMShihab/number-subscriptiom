@@ -7,15 +7,17 @@ from django.contrib.auth.models import User
 import datetime
 
 @shared_task
-def updateSubscription():
+def update_subscription():
     """ This task will run every mid night to unsubsscribe plan
         after the subscription period end """
    
     today_date = datetime.datetime.now().strftime("%x")
-    customers = Customer.objects.filter(planName=today_date)
+    customers = Customer.objects.filter(end_date=today_date)
+    
     for customer in customers:
-        customer.isSubscribe = False
+        customer.is_subscribe = False
         customer.save() 
+        
         user = User.objects.get(email= customer.user)
         user.is_active = False
         user.save()

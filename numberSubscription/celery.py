@@ -18,7 +18,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.conf.beat_schedule = {
     "every-mid-night":{
-        "task": "subscriber.tasks.updateSubscription",
+        "task": "subscriber.tasks.update_subscription",
         "schedule":crontab(hour=0, minute=0),
         
 

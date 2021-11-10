@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
-class SubscriptionPlan(models.model):
+class SubscriptionPlan(models.Model):
     """ Subscription plan """
     subscription_plan_name = models.CharField(max_length=100)
     subscription_plan_type = models.CharField(max_length=100)
@@ -20,7 +20,7 @@ class Customer(models.Model):
     primary_number = models.CharField(max_length=14,unique=True,blank=False,null=False)
     phone_number1 = models.CharField(max_length=14,blank=True,null=True)
     phone_number2 = models.CharField(max_length=14,blank=True, null=True)
-    subscription_plan = models.CharField(SubscriptionPlan,max_length=100)
+    subscription_plan = models.ForeignKey(SubscriptionPlan,max_length=100,on_delete=models.SET_NULL,null=True)
     stripe_id = models.CharField(max_length=256)
     subscription_id = models.CharField(max_length=256,blank=True,null=True)
     start_date = models.CharField(max_length =256)
@@ -31,13 +31,18 @@ class Customer(models.Model):
         return self.primary_number
 
 
-class SubscriptionData(models.model):
+class SubscriptionData(models.Model):
     """ All Subscription data """
      
     subscriber = models.CharField(max_length=14)
     subscription = models.CharField(max_length=100)
     subscription_start = models.CharField(max_length=100,blank=True,null=True)
     subscription_end = models.CharField(max_length=100,blank=True,null=True)
+    
+    def __str__(self):
+        return self.subscriber
+    
+    
     
     
 

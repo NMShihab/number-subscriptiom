@@ -1,14 +1,11 @@
-
 # Number Subscription
 
 This Django app to track
 enterprise customers who pay a monthly subscription for a phone and data plan.
 
-
 ## Acknowledgements
 
- - [API Reference](https://documenter.getpostman.com/view/13820248/UVC3kTiA)
- 
+- [API Reference](https://documenter.getpostman.com/view/13820248/UVC3kTiA)
 
 ## Installation Guide
 
@@ -21,7 +18,9 @@ enterprise customers who pay a monthly subscription for a phone and data plan.
 #### Create Python Virtual Environment and Start that
 
 #### Then go inside number-subscription and start terminal there
+
 #### Run following commant
+
 ```http
   number-subscription$ pip install -r requirements.txt
 
@@ -34,7 +33,18 @@ enterprise customers who pay a monthly subscription for a phone and data plan.
 
 ```
 
-####  Go Through [API Reference](https://documenter.getpostman.com/view/13820248/UVC3kTiA) and play with this
+#### Run celery for background task. run this two commands in ceparate terminal
 
+```http
+  number-subscription$ celery -A numberSubscription worker --pool=solo  -l info
+
+```
+
+```http
+  number-subscription$ celery -A numberSubscription beat -l info -S django
+
+```
+
+#### Go Through [API Reference](https://documenter.getpostman.com/view/13820248/UVC3kTiA) and play with this
 
 ### Thank You !
